@@ -1,0 +1,62 @@
+{
+  "action": {
+    "default_title": "DeepSeek Sidebar Agent（点击打开侧边栏）"
+  },
+  "background": {
+    "service_worker": "src/background/worker.js"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "src/agent/prompts.js",
+        "src/content/deepseek.js",
+        "src/content/artifact.js"
+      ],
+      "matches": [
+        "https://chat.deepseek.com/*"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "description": "把 DeepSeek 对话升级为编程智能体：侧边栏控制台、Three.js 游戏工坊、多对话调度、网页操控。",
+  "host_permissions": [
+    "https://chat.deepseek.com/*",
+    "<all_urls>"
+  ],
+  "icons": {
+    "128": "icons/icon128.png",
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png"
+  },
+  "manifest_version": 3,
+  "name": "DeepSeek Sidebar Agent",
+  "permissions": [
+    "sidePanel",
+    "tabs",
+    "scripting",
+    "debugger",
+    "storage",
+    "unlimitedStorage",
+    "downloads",
+    "contextMenus",
+    "notifications"
+  ],
+  "short_name": "DS Agent",
+  "side_panel": {
+    "default_path": "src/sidepanel/panel.html"
+  },
+  "version": "0.1.0",
+  "omnibox": {
+    "keyword": "ds"
+  },
+  "commands": {
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+D",
+        "mac": "Command+Shift+D"
+      },
+      "description": "打开 / 聚焦 DS Agent 侧边栏"
+    }
+  }
+}

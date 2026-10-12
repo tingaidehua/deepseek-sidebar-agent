@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+<header>
+  <div class="title">⚡ DeepSeek Sidebar Agent</div>
+  <div class="subtitle">把对话升级为编程智能体</div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="game" class="active">🎮 游戏工坊</button>
+  <button data-tab="chat">💬 对话增强</button>
+  <button data-tab="fanout">⇄ 多对话</button>
+  <button data-tab="operate">🌐 网页操控</button>
+</nav>
+
+<main>
+  <div class="modes">
+    <label class="switch"><input type="checkbox" id="modeDeepThink" checked> 深度思考</label>
+    <label class="switch"><input type="checkbox" id="modeWebSearch"> 联网搜索</label>
+  </div>
+  <section id="tab-game" class="tab active">
+    <label>游戏创意（一句话描述你想要的游戏）</label>
+    <textarea id="gameIdea" rows="3" placeholder="例如：一个太空射击游戏，飞船躲陨石、吃能量豆回血"></textarea>
+    <button id="runGame" class="primary">生成并试玩</button>
+    <div class="row">
+      <button id="regenGame" class="ghost">🔁 换个玩法</button>
+      <button id="dlGame" class="ghost">⬇ 下载 HTML</button>
+    </div>
+    <div class="ide-tabs">
+      <button data-ide="preview" class="active">预览</button>
+      <button data-ide="code">代码</button>
+      <button data-ide="console">控制台</button>
+      <button data-ide="history">历史</button>
+    </div>
+    <div id="ide-preview" class="ide-pane active">
+      <div class="preview-wrap">
+        <div class="preview-head">预览 <span id="gameStatus"></span></div>
+        <iframe id="gamePreview" sandbox="allow-scripts" title="游戏预览"></iframe>
+      </div>
+    </div>
+    <div id="ide-code" class="ide-pane">
+      <div class="code-bar"><button id="copyCode" class="ghost">复制代码</button></div>
+      <pre id="codeView">// 在 DeepSeek 输入框说"帮我开发一个俄罗斯方块"，或在上方输入创意点"生成并试玩"</pre>
+    </div>
+    <div id="ide-console" class="ide-pane">
+      <div id="consoleView" class="console-empty">暂无报错 — 运行时错误会自动出现在这里并触发修复</div>
+    </div>
+    <div id="ide-history" class="ide-pane">
+      <div id="historyView" class="console-empty">暂无历史版本</div>
+    </div>
+  </section>
+
+  <section id="tab-chat" class="tab">
+    <label>任务描述（智能体会先给计划、再给完整代码）</label>
+    <textarea id="chatTask" rows="4" placeholder="例如：写一个 Python 脚本，批量把文件夹里的图片转成 webp"></textarea>
+    <button id="runChat" class="primary">发给智能体</button>
+    <div class="ctx-meter">
+      <div class="ctx-label">上下文用量 <span id="ctxPct">–</span></div>
+      <div class="ctx-bar"><div id="ctxFill"></div></div>
+    </div>
+  </section>
+
+  <section id="tab-fanout" class="tab">
+    <label>子任务（每行一个，将并行开多个 DeepSeek 对话执行）</label>
+    <textarea id="fanoutTasks" rows="5" placeholder="调研 A 方案的优缺点&#10;调研 B 方案的优缺点&#10;对比并给出选型建议"></textarea>
+    <button id="runFanout" class="primary">并行执行</button>
+    <div id="fanoutResults"></div>
+  </section>
+
+  <section id="tab-operate" class="tab">
+    <label>目标网址</label>
+    <input id="opUrl" type="text" placeholder="https://example.com">
+    <label>要它做什么</label>
+    <textarea id="opTask" rows="3" placeholder="例如：找到页面上的价格并告诉我"></textarea>
+    <button id="runOperate" class="primary">开始操控</button>
+    <p class="hint">通过 chrome.debugger（页内 CDP）驱动页面，无需手动开 9222 端口。</p>
+  </section>
+</main>
+
+<footer>
+  <div class="log-head">运行日志</div>
+  <div id="log"></div>
+</footer>
+
+<script src="panel.js"></script>
+</body>
+</html>
