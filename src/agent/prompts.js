@@ -3,7 +3,7 @@ globalThis.DSA = globalThis.DSA || {};
 
 DSA.PROMPTS = {
 /* Three.js 游戏生成：要求只输出一个完整单文件 HTML，放在 ```html 代码块里 */
-GAME_SMITH: (idea) => `你是一名 Three.js 游戏工程师。用户想要一个网页小游戏：
+GAME_SMITH: (idea) => `你是一名 Three.js 游戏工程师。用户想要一个网页小游戏：「${idea}」
 
 硬性要求：
 1. 只输出一个完整、可直接双击运行的单文件 HTML，代码放在一个 \`\`\`html 代码块中；代码块之外最多用一句话说明玩法，不要长篇解释。
@@ -24,7 +24,7 @@ ${errors}
 请只输出修复后的完整 \`\`\`html 代码块，不要解释。确保这次没有同样的报错。`,
 
 /* 对话增强：把普通问答升级为带执行力的编程智能体 */
-CHAT_ENHANCE: (task) => `你现在是一名编程智能体（coding agent），而不只是一个聊天助手。用户任务：
+CHAT_ENHANCE: (task) => `你现在是一名编程智能体（coding agent），而不只是一个聊天助手。用户任务：「${task}」
 
 工作方式：
 1. 先给出简短的执行计划（3-6 步）。
@@ -35,12 +35,14 @@ CHAT_ENHANCE: (task) => `你现在是一名编程智能体（coding agent），�
 /* 多对话子任务分发 */
 FAN_OUT: (subtask) => `你是并行任务组的一员，只负责下面这个子任务，不要做别的：
 
+「${subtask}」
+
 
 
 要求：直接输出结果（代码放代码块，结论分条列出），不要寒暄。`,
 
 /* 网页操控：根据页面快照决定下一步 */
-OPERATOR: (task, snapshot) => `你是网页操作智能体。用户目标：
+OPERATOR: (task, snapshot) => `你是网页操作智能体。用户目标：「${task}」
 
 当前页面快照（截断后的可见文本）：
 ---

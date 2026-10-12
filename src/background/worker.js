@@ -93,10 +93,10 @@ function lastAssistantText(messages) {
 }
 
 function extractCodeBlock(text, lang = "html") {
-  const re = new RegExp("```" + lang + "\\s*\\n([\\s\\S]*?)```", "i");
+  const re = new RegExp("```" + lang + "[a-z]*\\s*\\n([\\s\\S]*?)```", "i");
   const m = text.match(re);
   if (m) return m[1].trim();
-  const any = text.match(/```\s*\n([\s\S]*?)```/);
+  const any = text.match(/```[a-z]*\s*\n([\s\S]*?)```/i);
   return any ? any[1].trim() : "";
 }
 
