@@ -244,8 +244,9 @@
   const detectIntent = (t) => (GAME_RE.test(t) ? "game" : CODE_RE.test(t) ? "code" : "chat");
 
   async function getModes() {
-    const d = await chrome.storage.local.get("dsa:modes");
-    return d["dsa:modes"] || { deepThink: true, webSearch: false };
+    const d = await chrome.storage.local.get("dsa:settings");
+    const s = d["dsa:settings"] || {};
+    return { deepThink: s.deepThink !== false, webSearch: !!s.webSearch };
   }
 
   function lastAssistantTextLocal(messages) {
@@ -319,7 +320,10 @@
     chip.title = "点击开关 Agent 模式：开=在输入框发送时自动按意图增强";
     chip.addEventListener("click", async () => {
       agentMode = !agentMode;
-      await chrome.storage.local.set({ "dsa:agentMode": agentMode });
+      const d = await chrome.storage.local.get("dsa:settings");
+      const s = d["dsa:settings"] || {};
+      s.agentMode = agentMode;
+      await chrome.storage.local.set({ "dsa:settings": s });
       document.getElementById("dsa-chip-toggle").textContent = `🤖 Agent: ${agentMode ? "开" : "关"}`;
     });
     document.body.appendChild(chip);
@@ -399,7 +403,10 @@
             sendResponse({ ok: true, ...(await waitForIdle(msg.opts)) });
             break;
           default:
-            sendResponse({ ok: false, error: "unknown type: " + msg.type });
+            // 不是发给本脚本的消息（如 ARTIFACT_*）：必须沉默，不响应。
+            // 两个 content script 都响应会形成竞态，sendMessage 取先到的那个，
+            // 经常拿到错误的响应（"not artifact msg" 的由来）。
+            return;
         }
       } catch (e) {
         sendResponse({ ok: false, error: String(e.message || e) });
@@ -432,9 +439,9 @@
     }
   }, true);
 
-  // Agent 模式初始状态（默认开）
-  chrome.storage.local.get("dsa:agentMode").then((d) => {
-    agentMode = d["dsa:agentMode"] !== false;
+  // Agent 模式初始状态（默认开，可在选项页改）
+  chrome.storage.local.get("dsa:settings").then((d) => {
+    agentMode = (d["dsa:settings"] || {}).agentMode !== false;
     ensureChip();
   }).catch(() => ensureChip());
 

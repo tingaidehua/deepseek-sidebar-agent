@@ -128,8 +128,12 @@ function notifyGameDone() {
 
 /* 渲染 + 报错自动修复（输入框任务与侧边栏任务共用） */
 async function renderGameAndFix(html, tabId, idea, modes) {
+  const st = (await chrome.storage.local.get("dsa:settings"))["dsa:settings"] || {};
+  const maxRounds = Math.max(0, st.fixRounds ?? 3);
   await saveGameVersion(idea, html);
-  for (let round = 1; round <= 3; round++) {
+  let lastRound = 1;
+  for (let round = 1; round <= Math.max(1, maxRounds); round++) {
+    lastRound = round;
     log(`② 第 ${round} 轮渲染…`);
     const res = await sendToTab(tabId, { type: "ARTIFACT_RENDER", html });
     if (!res?.ok) throw new Error("渲染失败：" + (res?.error || "未知"));
@@ -140,19 +144,23 @@ async function renderGameAndFix(html, tabId, idea, modes) {
       notifyGameDone();
       return { html, rounds: round };
     }
-    log(`③ 发现 ${res.errors.length} 个报错，自动修复中…`);
-    log(res.errors.map((e) => "   " + e).join("\n"));
-    const fix = await askDeepSeek(tabId, DSA.PROMPTS.GAME_FIX(res.errors.join("\n")), "game", modes);
-    html = extractCodeBlock(fix.assistantText, "html") || html;
-    await saveGameVersion(idea + `（修复${round}）`, html);
+    if (round < maxRounds) {
+      log(`③ 发现 ${res.errors.length} 个报错，自动修复中…`);
+      log(res.errors.map((e) => "   " + e).join("\n"));
+      const fix = await askDeepSeek(tabId, DSA.PROMPTS.GAME_FIX(res.errors.join("\n")), "game", modes);
+      html = extractCodeBlock(fix.assistantText, "html") || html;
+      await saveGameVersion(idea + `（修复${round}）`, html);
+    }
   }
-  log("⚠ 3 轮后仍有报错，已保留最后一版供手动调整");
-  return { html, rounds: 3 };
+  log(`⚠ ${maxRounds} 轮后仍有报错，已保留最后一版供手动调整`);
+  return { html, rounds: lastRound };
 }
 
 /* ---------- 游戏工坊：生成 -> 渲染 -> 报错 -> 自动修复 ---------- */
 async function runGameFlow(idea, tabId, modes) {
   const tab = await ensureDsTab(tabId);
+  broadcast({ type: "GAME_START", idea });
+  try { await chrome.sidePanel.open({ tabId: tab }); } catch {} // 生成开始就自动打开右侧舞台
   log(`🎮 游戏创意：${idea}`);
   log("① 正在让 DeepSeek 编写游戏…");
   const { assistantText } = await askDeepSeek(tab, DSA.PROMPTS.GAME_SMITH(idea), "game", modes);
@@ -237,10 +245,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       switch (msg.type) {
         case "AGENT_RUN": {
           const { mode, payload } = msg;
-          // 模型开关：深度思考默认开；联网搜索默认只在多对话（调研）场景开
+          // 模型开关：优先本次请求，其次选项页配置，最后默认值
+          const settings = (await chrome.storage.local.get("dsa:settings"))["dsa:settings"] || {};
           const modes = {
-            deepThink: payload.modes?.deepThink ?? true,
-            webSearch: payload.modes?.webSearch ?? mode === "fanout",
+            deepThink: payload.modes?.deepThink ?? settings.deepThink ?? true,
+            webSearch: payload.modes?.webSearch ?? settings.webSearch ?? mode === "fanout",
           };
           if (mode === "game") {
             const r = await runGameFlow(payload.idea, payload.tabId, modes);
@@ -272,6 +281,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             break;
           }
           const tabId = _sender.tab?.id || (await ensureDsTab());
+          broadcast({ type: "GAME_START", idea: msg.idea || "" });
+          try { await chrome.sidePanel.open({ tabId }); } catch {}
           const r = await renderGameAndFix(html, tabId, msg.idea || "（输入框任务）",
             { deepThink: true, webSearch: false });
           sendResponse({ ok: true, ...r });

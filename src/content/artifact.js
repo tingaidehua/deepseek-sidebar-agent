@@ -114,7 +114,7 @@ window.addEventListener('unhandledrejection', function (e) {
           close();
           sendResponse({ ok: true });
         } else {
-          sendResponse({ ok: false, error: "not artifact msg" });
+          // 不是发给 artifact 的消息（如 DS_*）：沉默，让 deepseek.js 响应，避免竞态。
         }
       } catch (e) {
         sendResponse({ ok: false, error: String(e.message || e) });

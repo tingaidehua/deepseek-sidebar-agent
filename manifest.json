@@ -58,5 +58,6 @@
       },
       "description": "打开 / 聚焦 DS Agent 侧边栏"
     }
-  }
+  },
+  "options_page": "src/options/options.html"
 }
