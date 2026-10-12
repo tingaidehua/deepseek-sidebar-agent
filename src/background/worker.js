@@ -36,17 +36,37 @@ chrome.tabs.onUpdated.addListener((id, info, tab) => {
 });
 
 async function ensureDsTab(preferTabId) {
-  if (preferTabId && dsTabs.has(preferTabId)) return preferTabId;
-  for (const id of dsTabs) {
-    try { await chrome.tabs.get(id); return id; } catch { dsTabs.delete(id); }
+  // 先 ping：确认 content script 真的可达（装完没刷新页面是最常见的翻车）
+  const pingable = async (id) => {
+    try {
+      const r = await sendToTab(id, { type: "DS_PING" });
+      return !!r?.ok;
+    } catch {
+      return false;
+    }
+  };
+  if (preferTabId && (await pingable(preferTabId))) return preferTabId;
+  dsTabs.delete(preferTabId);
+  for (const id of [...dsTabs]) {
+    if (await pingable(id)) return id;
+    dsTabs.delete(id);
   }
-  const tab = await chrome.tabs.create({ url: DS_MATCH, active: false });
-  // 等 content script 上线
+  // 现有 tab 都不可用：找一个已打开的 deepseek 页面重载，而不是一味开新 tab
+  const existing = await chrome.tabs.query({ url: "https://chat.deepseek.com/*" });
+  let tab = existing[0];
+  if (tab) {
+    await chrome.tabs.reload(tab.id);
+  } else {
+    tab = await chrome.tabs.create({ url: DS_MATCH, active: false });
+  }
   for (let i = 0; i < 40; i++) {
     await sleep(500);
-    if (dsTabs.has(tab.id)) return tab.id;
+    if (await pingable(tab.id)) {
+      dsTabs.add(tab.id);
+      return tab.id;
+    }
   }
-  throw new Error("DeepSeek 页面未响应（content script 未加载）");
+  throw new Error("DeepSeek 页面未响应：请确认已登录 chat.deepseek.com 并刷新页面");
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

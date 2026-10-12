@@ -98,5 +98,15 @@
   $("btnClose").addEventListener("click", () => { lastGameHtml = ""; showEmpty(); });
   $("btnOptions").addEventListener("click", () => chrome.runtime.openOptionsPage());
 
-  refreshHistory();
+  /* 启动时检查是否有 DeepSeek 页面，没有就提示（有页面时后台会自动重载接管） */
+  (async () => {
+    try {
+      const tabs = await chrome.tabs.query({ url: "https://chat.deepseek.com/*" }).catch(() => []);
+      if (!tabs.length) {
+        const sub = document.querySelector(".empty-sub");
+        if (sub) sub.innerHTML = "比如「帮我开发一个俄罗斯方块」<br>游戏会自动在这里生成并运行<br><br>⚠️ 请先打开并登录<br>chat.deepseek.com";
+      }
+    } catch {}
+    refreshHistory();
+  })();
 })();
